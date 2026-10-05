@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: new-sta
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: ALLOWED_ORIGINS
+        value: "https://new-sta.vercel.app"

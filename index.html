@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="GeoEnergy Tamil Nadu — live CNG & EV fast-charging network tracker with queue forecasting, trip planning and crowd-sourced status updates." />
+<meta name="theme-color" content="#060910" />
+<title>GeoEnergy Tamil Nadu · Smart CNG &amp; EV Network</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+
+<style>
+/* =========================================================
+   DESIGN TOKENS
+   ========================================================= */
+:root{
+  --bg:#060910;
+  --surface:rgba(15,22,38,.72);
+  --surface-2:rgba(21,30,50,.86);
+  --surface-3:rgba(9,14,26,.66);
+
+  --line:rgba(148,163,184,.11);
+  --line-2:rgba(148,163,184,.2);
+
+  --text:#f1f5f9;
+  --text-2:#94a3b8;
+  --text-3:#5c6b82;
+
+  --ok:#10b981;   --ok-bg:rgba(16,185,129,.12);
+  --warn:#f59e0b; --warn-bg:rgba(245,158,11,.12);
+  --bad:#f43f5e;  --bad-bg:rgba(244,63,94,.12);
+
+  --accent:#6366f1;
+  --accent-2:#a855f7;
+  --accent-soft:rgba(99,102,241,.14);
+  --accent-glow:rgba(99,102,241,.32);
+  --accent-ring:rgba(99,102,241,.45);
+  --accent-grad:linear-gradient(135deg,#6366f1 0%,#8b5cf6 52%,#d946ef 100%);
+
+  --glow-1:rgba(99,102,241,.13);
+  --glow-2:rgba(6,182,212,.10);
+  --glow-3:rgba(217,70,239,.09);
+
+  --r-xs:8px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:26px;
+
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 10px 30px -12px rgba(0,0,0,.7);
+  --shadow-lg:0 24px 60px -20px rgba(0,0,0,.8);
+
+  --ease:cubic-bezier(.4,0,.2,1);
+  --maxw:1260px;
+}
+
+body[data-mode="ev"]{
+  --accent:#10b981;
+  --accent-2:#22d3ee;
+  --accent-soft:rgba(16,185,129,.14);
+  --accent-glow:rgba(16,185,129,.32);
+  --accent-ring:rgba(16,185,129,.45);
+  --accent-grad:linear-gradient(135deg,#059669 0%,#10b981 60%,#34d399 100%);
+  --glow-1:rgba(16,185,129,.13);
+  --glow-2:rgba(56,189,248,.10);
+  --glow-3:rgba(5,150,105,.09);
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+
+/* Ambient background */
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(58rem 40rem at 10% -12%, var(--glow-1), transparent 62%),
+    radial-gradient(52rem 36rem at 102% -4%, var(--glow-2), transparent 60%),
+    radial-gradient(60rem 42rem at 50% 112%, var(--glow-3), transparent 62%);
+  transition:background .6s var(--ease);
+}
+/* Fine grid overlay */
+body::after{
+  content:"";
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.035) 1px, transparent 1px);
+  background-size:58px 58px;
+  -webkit-mask-image:radial-gradient(ellipse 100% 65% at 50% 0%, #000 20%, transparent 78%);
+          mask-image:radial-gradient(ellipse 100% 65% at 50% 0%, #000 20%, transparent 78%);
+}
+
+h1,h2,h3,h4,p{margin:0;}
+button{font:inherit;color:inherit;}
+a{color:inherit;}
+svg{display:block;}
+
+:focus-visible{
+  outline:2px solid var(--accent-ring);
+  outline-offset:2px;
+  border-radius:6px;
+}
+
+::selection{background:var(--accent-soft);color:#fff;}
+
+/* Scrollbars */
+*::-webkit-scrollbar{width:10px;height:10px;}
+*::-webkit-scrollbar-track{background:transparent;}
+*::-webkit-scrollbar-thumb{background:rgba(148,163,184,.18);border-radius:99px;border:3px solid transparent;background-clip:content-box;}
+*::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,.3);background-clip:content-box;}
+
+.container{
+  width:100%;
+  max-width:var(--maxw);
+  margin-inline:auto;
+  padding-inline:clamp(1rem,4vw,2rem);
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+.site-header{
+  position:sticky; top:0; z-index:120;
+  background:rgba(6,9,16,.72);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border-bottom:1px solid var(--line);
+}
+.header-inner{
+  display:flex;
+  align-items:center;
+  gap:1.25rem;
+  min-height:74px;
+  padding-block:.75rem;
+}
+
+.brand{
+  display:flex; align-items:center; gap:.85rem;
+  text-decoration:none; flex-shrink:0;
+}
+.brand-mark{
+  width:42px; height:42px; flex-shrink:0;
+  display:grid; place-items:center;
+  border-radius:13px;
+  background:var(--accent-grad);
+  box-shadow:0 6px 22px -6px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.25);
+  transition:box-shadow .4s var(--ease), transform .4s var(--ease);
+}
+.brand:hover .brand-mark{transform:translateY(-1px);}
+.brand-name{
+  display:block;
+  font-size:1.06rem; font-weight:800; letter-spacing:-.025em;
+  line-height:1.15; white-space:nowrap;
+}
+.brand-name em{font-style:normal;color:var(--text-2);font-weight:600;}
+.brand-sub{
+  display:block;
+  font-size:.72rem; font-weight:500; color:var(--text-3);
+  letter-spacing:.01em; white-space:nowrap;
+  transition:color .3s var(--ease);
+}
+
+/* Segmented control */
+.segmented{
+  position:relative;
+  display:grid; grid-template-columns:1fr 1fr;
+  width:230px; flex-shrink:0;
+  padding:4px; margin-inline:auto;
+  border-radius:999px;
+  background:rgba(2,6,23,.7);
+  border:1px solid var(--line-2);
+}
+.segmented-thumb{
+  position:absolute;
+  inset:4px 50% 4px 4px;
+  border-radius:999px;
+  background:var(--accent-grad);
+  box-shadow:0 4px 16px -3px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.22);
+  transition:transform .38s var(--ease), background .4s var(--ease);
+  pointer-events:none;
+}
+body[data-mode="ev"] .segmented-thumb{transform:translateX(100%);}
+.seg-btn{
+  position:relative; z-index:1;
+  padding:.48rem .25rem;
+  border:0; background:transparent;
+  font-size:.8rem; font-weight:700; letter-spacing:.02em;
+  color:var(--text-2);
+  cursor:pointer;
+  border-radius:999px;
+  transition:color .3s var(--ease);
+  display:flex; align-items:center; justify-content:center; gap:.4rem;
+}
+.seg-btn[aria-selected="true"]{color:#fff;}
+
+.header-actions{
+  display:flex; align-items:center; gap:.5rem; flex-shrink:0;
+}
+
+.live-pill{
+  display:inline-flex; align-items:center; gap:.5rem;
+  height:36px; padding:0 .85rem;
+  font-size:.75rem; font-weight:600; color:var(--ok);
+  background:var(--ok-bg);
+  border:1px solid rgba(16,185,129,.24);
+  border-radius:999px;
+  white-space:nowrap;
+}
+.dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--ok); box-shadow:0 0 0 0 rgba(16,185,129,.6);
+  animation:ping 2s infinite;
+}
+@keyframes ping{
+  0%{box-shadow:0 0 0 0 rgba(16,185,129,.55);}
+  70%{box-shadow:0 0 0 7px rgba(16,185,129,0);}
+  100%{box-shadow:0 0 0 0 rgba(16,185,129,0);}
+}
+
+.btn{
+  display:inline-flex; align-items:center; gap:.45rem;
+  height:36px; padding:0 .85rem;
+  font-size:.78rem; font-weight:600;
+  color:var(--text);
+  background:rgba(148,163,184,.07);
+  border:1px solid var(--line-2);
+  border-radius:999px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease), color .2s var(--ease);
+}
+.btn:hover{background:rgba(148,163,184,.14);border-color:var(--accent-ring);transform:translateY(-1px);}
+.btn:active{transform:translateY(0);}
+.btn.is-active{
+  color:#fff; background:var(--accent-soft);
+  border-color:var(--accent-ring);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+.btn.listening{
+  color:#fff; background:#ec4899; border-color:#f472b6;
+  animation:micPulse 1s infinite alternate;
+}
+@keyframes micPulse{
+  from{box-shadow:0 0 0 0 rgba(236,72,153,.55);}
+  to{box-shadow:0 0 0 9px rgba(236,72,153,0);}
+}
+.btn svg{flex-shrink:0;}
+
+/* =========================================================
+   LAYOUT
+   ========================================================= */
+main{padding-block:2.25rem 4rem;}
+.section{margin-bottom:1.75rem;}
+
+.panel{
+  background:var(--surface);
+  backdrop-filter:blur(18px) saturate(140%);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-md);
+}
+
+.section-title{
+  font-size:1.16rem; font-weight:700; letter-spacing:-.02em;
+}
+.section-head{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:1rem; margin-bottom:1.1rem; flex-wrap:wrap;
+}
+.section-count{font-size:.8rem;color:var(--text-3);font-weight:500;}
+
+/* =========================================================
+   KPI STRIP
+   ========================================================= */
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:.9rem;
+  margin-bottom:1.75rem;
+}
+.kpi{
+  position:relative;
+  padding:1.1rem 1.25rem 1.15rem;
+  border-radius:var(--r-md);
+  background:var(--surface);
+  border:1px solid var(--line);
+  overflow:hidden;
+  transition:border-color .3s var(--ease), transform .3s var(--ease);
+}
+.kpi:hover{border-color:var(--line-2);transform:translateY(-2px);}
+.kpi::after{
+  content:""; position:absolute; inset:auto 0 0 0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:.5;
+}
+.kpi-label{
+  display:flex; align-items:center; gap:.4rem;
+  font-size:.7rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--text-3);
+  margin-bottom:.5rem;
+}
+.kpi-label svg{width:13px;height:13px;color:var(--accent);}
+.kpi-value{
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:1.6rem; font-weight:700; letter-spacing:-.03em;
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+}
+
+/* =========================================================
+   TRIP PLANNER
+   ========================================================= */
+.planner{
+  padding:1.4rem 1.5rem 1.5rem;
+  margin-bottom:1.75rem;
+  border-color:var(--accent-ring);
+  background:
+    linear-gradient(150deg, var(--accent-soft) 0%, transparent 45%),
+    var(--surface);
+  transition:border-color .4s var(--ease);
+}
+.planner-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:1rem; flex-wrap:wrap; margin-bottom:1.15rem;
+}
+.planner-title{
+  display:flex; align-items:center; gap:.6rem;
+  font-size:.98rem; font-weight:700; letter-spacing:-.01em;
+}
+.planner-title svg{color:var(--accent);}
+.planner-hint{font-size:.75rem;color:var(--text-3);}
+
+.field{display:flex;flex-direction:column;gap:.4rem;min-width:0;}
+.field label{
+  font-size:.72rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--text-3);
+}
+.control{
+  width:100%; height:44px;
+  padding:0 .85rem;
+  font-family:inherit; font-size:.86rem; font-weight:500; color:var(--text);
+  background:var(--surface-3);
+  border:1px solid var(--line-2);
+  border-radius:var(--r-sm);
+  outline:none;
+  transition:border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+  appearance:none;
+}
+select.control{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right .8rem center;
+  padding-right:2.2rem;
+  cursor:pointer;
+}
+select.control option{background:#0e1526;color:#f1f5f9;}
+.control:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+  background:rgba(9,14,26,.9);
+}
+.control::placeholder{color:var(--text-3);}
+
+.planner-form{
+  display:grid;
+  grid-template-columns:1.4fr 1.4fr .85fr auto;
+  gap:1rem;
+  align-items:end;
+}
+@media(max-width:900px){ .planner-form{grid-template-columns:1fr 1fr;} }
+@media(max-width:560px){ .planner-form{grid-template-columns:1fr;} }
+
+.btn-primary{
+  height:44px; padding:0 1.35rem;
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  font-size:.85rem; font-weight:700; letter-spacing:-.01em; color:#fff;
+  background:var(--accent-grad);
+  border:0; border-radius:var(--r-sm);
+  cursor:pointer;
+  white-space:nowrap;
+  box-shadow:0 8px 24px -10px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.2);
+  transition:transform .2s var(--ease), box-shadow .2s var(--ease), filter .2s var(--ease);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 12px 30px -10px var(--accent-glow);filter:brightness(1.06);}
+.btn-primary:active{transform:translateY(0);}
+
+.trip-results{
+  display:none;
+  margin-top:1.35rem; padding-top:1.35rem;
+  border-top:1px solid var(--line);
+}
+.trip-results.show{display:block;animation:fadeUp .4s var(--ease) both;}
+.trip-summary{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:1rem; flex-wrap:wrap; margin-bottom:.95rem;
+}
+.trip-summary strong{font-size:.9rem;font-weight:700;}
+.trip-summary span{font-size:.76rem;color:var(--ok);font-weight:600;}
+
+.stopover-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:.85rem;
+}
+.stop-card{
+  position:relative;
+  padding:1rem 1.1rem;
+  border-radius:var(--r-md);
+  background:var(--surface-3);
+  border:1px solid var(--line-2);
+  transition:border-color .25s var(--ease), transform .25s var(--ease);
+}
+.stop-card:hover{border-color:var(--accent-ring);transform:translateY(-2px);}
+.stop-eyebrow{
+  font-size:.65rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:.35rem;
+}
+.stop-name{font-size:.9rem;font-weight:700;margin-bottom:.55rem;line-height:1.35;}
+.stop-stats{
+  display:flex; justify-content:space-between; gap:.75rem;
+  font-size:.76rem; color:var(--text-2);
+  padding-bottom:.65rem; margin-bottom:.65rem;
+  border-bottom:1px dashed var(--line-2);
+}
+.stop-stats b{color:#fff;font-family:'JetBrains Mono',monospace;font-weight:700;}
+.stop-link{
+  font-size:.76rem;font-weight:700;color:var(--accent);
+  text-decoration:none; display:inline-flex; align-items:center; gap:.3rem;
+  transition:gap .2s var(--ease);
+}
+.stop-link:hover{gap:.55rem;}
+
+/* =========================================================
+   AI ADVISOR
+   ========================================================= */
+.advisor{
+  position:relative;
+  padding:1.35rem 1.5rem 1.45rem;
+  border-radius:var(--r-lg);
+  border:1px solid var(--accent-ring);
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--accent-soft) 0%, transparent 55%),
+    var(--surface);
+  box-shadow:0 0 0 1px rgba(255,255,255,.02), 0 18px 50px -26px var(--accent-glow);
+  overflow:hidden;
+  transition:border-color .4s var(--ease), box-shadow .4s var(--ease);
+}
+.advisor::before{
+  content:"";
+  position:absolute; top:-60%; left:-20%;
+  width:60%; height:220%;
+  background:radial-gradient(closest-side, var(--accent-glow), transparent);
+  opacity:.35; pointer-events:none;
+}
+.advisor-head{
+  position:relative;
+  display:flex; align-items:center; gap:.55rem;
+  font-size:.82rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--text-2);
+  margin-bottom:.85rem;
+}
+.advisor-head svg{color:var(--accent);}
+.advisor-body{
+  position:relative;
+  padding:.9rem 1.1rem;
+  margin-bottom:1rem;
+  font-size:.9rem; line-height:1.65; color:#dbe3ef;
+  background:rgba(4,8,16,.6);
+  border-left:2px solid var(--accent);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+}
+.advisor-body strong{color:#fff;font-weight:700;}
+.chips{position:relative;display:flex;flex-wrap:wrap;gap:.5rem;}
+.chip{
+  padding:.45rem .9rem;
+  font-size:.76rem; font-weight:600;
+  color:var(--text);
+  background:rgba(148,163,184,.07);
+  border:1px solid var(--line-2);
+  border-radius:999px;
+  cursor:pointer;
+  transition:background .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+}
+.chip:hover{background:var(--accent-soft);border-color:var(--accent-ring);transform:translateY(-1px);}
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
+.controls{padding:1.15rem 1.25rem;margin-bottom:1.5rem;}
+.search-wrap{position:relative;margin-bottom:1rem;}
+.search-wrap svg{
+  position:absolute; left:1rem; top:50%; transform:translateY(-50%);
+  color:var(--text-3); pointer-events:none;
+}
+.search{
+  width:100%; height:46px;
+  padding:0 1rem 0 2.7rem;
+  font-family:inherit; font-size:.88rem; color:var(--text);
+  background:var(--surface-3);
+  border:1px solid var(--line-2);
+  border-radius:var(--r-sm);
+  outline:none;
+  transition:border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.search::placeholder{color:var(--text-3);}
+.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+
+.filter-row{
+  display:flex; flex-wrap:wrap; gap:.4rem;
+  padding-top:.85rem;
+  border-top:1px solid var(--line);
+}
+.filter-row + .filter-row{margin-top:.75rem;}
+.filter{
+  padding:.38rem .82rem;
+  font-size:.76rem; font-weight:600;
+  color:var(--text-2);
+  background:rgba(148,163,184,.05);
+  border:1px solid var(--line);
+  border-radius:999px;
+  cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.filter:hover{color:var(--text);border-color:var(--line-2);background:rgba(148,163,184,.1);}
+.filter[aria-pressed="true"]{
+  color:#fff;
+  background:var(--accent-soft);
+  border-color:var(--accent-ring);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+
+/* =========================================================
+   STATION GRID
+   ========================================================= */
+.stations{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+  gap:1.1rem;
+}
+
+.card{
+  position:relative;
+  display:flex; flex-direction:column;
+  padding:1.25rem 1.3rem 1.1rem;
+  border-radius:var(--r-lg);
+  background:var(--surface);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line);
+  transition:border-color .28s var(--ease), transform .28s var(--ease), box-shadow .28s var(--ease), background .28s var(--ease);
+  animation:fadeUp .45s var(--ease) both;
+  animation-delay:calc(var(--i,0) * 22ms);
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.card:hover{
+  border-color:var(--line-2);
+  background:var(--surface-2);
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-lg);
+}
+.card.is-best{
+  border-color:var(--accent-ring);
+  box-shadow:0 0 0 1px var(--accent-ring), 0 18px 44px -22px var(--accent-glow);
+}
+.card.is-best::before{
+  content:"";
+  position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(140deg, var(--accent-glow), transparent 45%);
+  opacity:.5;
+}
+.ribbon{
+  position:absolute; top:-9px; right:16px;
+  padding:.2rem .6rem;
+  font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+  color:#fff;
+  background:var(--accent-grad);
+  border-radius:999px;
+  box-shadow:0 4px 14px -4px var(--accent-glow);
+}
+
+.card-head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:.75rem; margin-bottom:.9rem;
+}
+.card-title h3{
+  font-size:.96rem; font-weight:700; letter-spacing:-.015em;
+  line-height:1.35; margin-bottom:.3rem;
+}
+.card-meta{
+  display:flex; align-items:center; flex-wrap:wrap; gap:.35rem;
+  font-size:.74rem; color:var(--text-3); font-weight:500;
+}
+.card-meta .dist{color:var(--accent);font-weight:700;}
+.card-meta .sep{opacity:.4;}
+
+.status{
+  display:inline-flex; align-items:center; gap:.35rem;
+  flex-shrink:0;
+  padding:.26rem .6rem;
+  font-size:.63rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  border-radius:999px;
+  border:1px solid transparent;
+}
+.status i{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.status.optimal{color:var(--ok);background:var(--ok-bg);border-color:rgba(16,185,129,.25);}
+.status.moderate{color:var(--warn);background:var(--warn-bg);border-color:rgba(245,158,11,.25);}
+.status.critical{color:var(--bad);background:var(--bad-bg);border-color:rgba(244,63,94,.25);}
+
+.metrics{
+  padding:.85rem .95rem;
+  border-radius:var(--r-md);
+  background:rgba(4,8,16,.5);
+  border:1px solid var(--line);
+  margin-bottom:1rem;
+}
+.metric-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.75rem;
+  font-size:.79rem;
+  padding:.22rem 0;
+}
+.metric-row span{color:var(--text-2);}
+.metric-row b{
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:.8rem; font-weight:700; color:#fff;
+  font-variant-numeric:tabular-nums;
+}
+.metric-row b.optimal{color:var(--ok);}
+.metric-row b.moderate{color:var(--warn);}
+.metric-row b.critical{color:var(--bad);}
+
+.meter{
+  height:4px; margin-top:.7rem;
+  border-radius:99px;
+  background:rgba(148,163,184,.13);
+  overflow:hidden;
+}
+.meter-fill{
+  display:block; height:100%; border-radius:99px;
+  transition:width .5s var(--ease);
+}
+.meter-fill.optimal{background:linear-gradient(90deg,#059669,#34d399);}
+.meter-fill.moderate{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.meter-fill.critical{background:linear-gradient(90deg,#e11d48,#fb7185);}
+
+.card-foot{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.75rem;
+  margin-top:auto; padding-top:.85rem;
+  border-top:1px solid var(--line);
+}
+.brand-tag{
+  font-size:.66rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-3);
+}
+.nav-link{
+  display:inline-flex; align-items:center; gap:.35rem;
+  font-size:.78rem; font-weight:700; color:var(--accent);
+  text-decoration:none;
+  transition:gap .2s var(--ease);
+}
+.nav-link:hover{gap:.55rem;}
+
+/* Empty state */
+.empty{
+  grid-column:1/-1;
+  padding:3.5rem 1.5rem;
+  text-align:center;
+  border-radius:var(--r-lg);
+  border:1px dashed var(--line-2);
+  background:rgba(9,14,26,.4);
+}
+.empty svg{margin:0 auto 1rem;color:var(--text-3);}
+.empty h3{font-size:1rem;font-weight:700;margin-bottom:.35rem;}
+.empty p{font-size:.83rem;color:var(--text-3);}
+
+/* =========================================================
+   REPORT FORM
+   ========================================================= */
+.report{
+  padding:1.75rem 1.75rem 1.85rem;
+  border-radius:var(--r-lg);
+  margin-top:2rem;
+}
+.report-head{margin-bottom:1.35rem;}
+.report-head p{font-size:.83rem;color:var(--text-3);margin-top:.3rem;}
+.report-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:1.1rem;
+}
+.span-2{grid-column:1/-1;}
+@media(max-width:640px){ .report{padding:1.35rem;} }
+
+/* =========================================================
+   FLOATING / TOAST / FOOTER
+   ========================================================= */
+.fab{
+  position:fixed; left:1.5rem; bottom:1.5rem; z-index:200;
+  display:inline-flex; align-items:center; gap:.5rem;
+  height:44px; padding:0 1.15rem;
+  font-size:.8rem; font-weight:700; color:#fff;
+  text-decoration:none;
+  background:var(--accent-grad);
+  border-radius:999px;
+  box-shadow:0 14px 34px -12px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.2);
+  transition:transform .22s var(--ease), box-shadow .22s var(--ease);
+}
+.fab:hover{transform:translateY(-2px);box-shadow:0 20px 42px -14px var(--accent-glow);}
+@media(max-width:520px){ .fab{left:1rem;bottom:1rem;padding:0 1rem;} }
+
+.toast{
+  position:fixed; right:1.5rem; bottom:1.5rem; z-index:300;
+  max-width:min(360px,calc(100vw - 3rem));
+  padding:.85rem 1.15rem;
+  font-size:.82rem; font-weight:600; line-height:1.45;
+  color:#fff;
+  background:rgba(15,22,38,.96);
+  border:1px solid var(--accent-ring);
+  border-radius:var(--r-md);
+  box-shadow:0 22px 55px -18px rgba(0,0,0,.9);
+  opacity:0; transform:translateY(14px) scale(.98);
+  pointer-events:none;
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+}
+.toast.show{opacity:1;transform:translateY(0) scale(1);}
+@media(max-width:520px){ .toast{right:1rem;left:1rem;bottom:4.5rem;max-width:none;} }
+
+.site-footer{
+  border-top:1px solid var(--line);
+  padding:1.6rem 0 2.4rem;
+  margin-top:1rem;
+}
+.footer-inner{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:1rem; flex-wrap:wrap;
+  font-size:.75rem; color:var(--text-3);
+}
+.footer-inner strong{color:var(--text-2);font-weight:700;}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media(max-width:1080px){
+  .header-inner{flex-wrap:wrap;row-gap:.5rem;}
+  .segmented{order:3;width:100%;max-width:280px;margin:0 auto;}
+  .header-actions{margin-left:auto;}
+}
+@media(max-width:760px){
+  .brand-sub{display:none;}
+  .btn .btn-label{display:none;}
+  .btn{width:36px;padding:0;justify-content:center;}
+  .live-pill{padding:0 .65rem;font-size:.7rem;}
+}
+@media(max-width:520px){
+  main{padding-block:1.5rem 3rem;}
+  .stations{grid-template-columns:1fr;}
+  .live-pill{display:none;}
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+
+<body data-mode="cng">
+
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
+<header class="site-header">
+  <div class="container header-inner">
+
+    <a class="brand" href="#top" aria-label="GeoEnergy Tamil Nadu home">
+      <span class="brand-mark">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">GeoEnergy <em>Tamil Nadu</em></span>
+        <span class="brand-sub" id="brandSub">Smart CNG refuelling network</span>
+      </span>
+    </a>
+
+    <div class="segmented" role="tablist" aria-label="Energy mode">
+      <span class="segmented-thumb" aria-hidden="true"></span>
+      <button class="seg-btn" id="tabCng" role="tab" aria-selected="true" data-mode="cng">⛽ CNG</button>
+      <button class="seg-btn" id="tabEv" role="tab" aria-selected="false" data-mode="ev">🔋 EV</button>
+    </div>
+
+    <div class="header-actions">
+      <span class="live-pill"><i class="dot"></i><span id="liveCount">100 live hubs</span></span>
+
+      <button class="btn" id="btnVoice" type="button" aria-label="Voice search" title="Voice search — say &quot;nearby station&quot;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/>
+        </svg>
+        <span class="btn-label" id="voiceLabel">Voice</span>
+      </button>
+
+      <button class="btn" id="btnGps" type="button" aria-label="Sort by nearest" title="Sort stations by distance">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/>
+          <circle cx="12" cy="10" r="2.6"/>
+        </svg>
+        <span class="btn-label" id="gpsLabel">Near me</span>
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<main class="container" id="top">
+
+  <!-- ============ KPI STRIP ============ -->
+  <section class="kpi-grid" aria-label="Network summary">
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5"/></svg>
+        Monitored hubs
+      </div>
+      <div class="kpi-value" id="kpiTotal">—</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <span id="kpiFastLabel">Fast lanes (&lt;10 min)</span>
+      </div>
+      <div class="kpi-value" id="kpiFast" style="color:var(--ok)">—</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span id="kpiQualityLabel">High pressure (≥200 bar)</span>
+      </div>
+      <div class="kpi-value" id="kpiQuality" style="color:var(--accent)">—</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span id="kpiAvgLabel">Avg TN network wait</span>
+      </div>
+      <div class="kpi-value" id="kpiAvg">—</div>
+    </div>
+  </section>
+
+  <!-- ============ TRIP PLANNER ============ -->
+  <section class="panel planner" aria-labelledby="plannerHeading">
+    <div class="planner-head">
+      <div class="planner-title" id="plannerHeading">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 20 3.6 17.3A1 1 0 0 1 3 16.4V5.6a1 1 0 0 1 1.4-.9L9 7m0 13 6-3m-6 3V7m6 10 4.6 2.3a1 1 0 0 0 1.4-.9V7.6a1 1 0 0 0-.6-.9L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+        <span id="plannerTitle">Highway corridor CNG trip planner</span>
+      </div>
+      <span class="planner-hint">Optimal stopovers along Tamil Nadu corridors</span>
+    </div>
+
+    <div class="planner-form">
+      <div class="field">
+        <label for="tripOrigin">Origin</label>
+        <select id="tripOrigin" class="control">
+          <option value="Chennai & Suburbs">Chennai / Chengalpattu (GST · NH45)</option>
+          <option value="Coimbatore Region">Coimbatore / Tiruppur (NH544)</option>
+          <option value="Salem & Erode">Salem / Erode (NH44 · NH544)</option>
+          <option value="Central TN">Trichy / Thanjavur (NH45 · NH83)</option>
+          <option value="South TN">Madurai / Tirunelveli (NH44 · NH38)</option>
+          <option value="North & Vellore">Vellore / Hosur (NH48 · NH44)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="tripDestination">Destination</label>
+        <select id="tripDestination" class="control">
+          <option value="South TN">Madurai / Tirunelveli (NH44)</option>
+          <option value="Coimbatore Region">Coimbatore / Tiruppur (NH544)</option>
+          <option value="Salem & Erode">Salem / Erode (NH44 · NH544)</option>
+          <option value="Central TN">Trichy / Thanjavur (NH45)</option>
+          <option value="Chennai & Suburbs">Chennai / Chengalpattu</option>
+          <option value="North & Vellore">Vellore / Hosur (NH48)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="tripRange" id="rangeLabel">Cylinder range</label>
+        <select id="tripRange" class="control">
+          <option value="160">~160 km</option>
+          <option value="200" selected>~200 km</option>
+          <option value="240">~240 km</option>
+          <option value="300" style="display:none">~300 km</option>
+          <option value="400" style="display:none">~400 km</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn-primary" id="btnPlan">
+        Plan route
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="trip-results" id="tripResults">
+      <div class="trip-summary">
+        <strong id="tripSummary">Trip route overview</strong>
+        <span id="tripStops"></span>
+      </div>
+      <div class="stopover-grid" id="tripStopovers"></div>
+    </div>
+  </section>
+
+  <!-- ============ AI ADVISOR ============ -->
+  <section class="advisor" aria-live="polite">
+    <div class="advisor-head">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 10V3 4 14h7v7l9-11h-7z"/>
+      </svg>
+      Neural route optimiser
+    </div>
+    <div class="advisor-body" id="aiOutput">
+      Scanning live data gradients across Tamil Nadu dispensing points…
+    </div>
+    <div class="chips" id="aiChips"></div>
+  </section>
+
+  <!-- ============ CONTROLS ============ -->
+  <section class="panel controls" aria-label="Search and filters">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input type="search" id="searchInput" class="search" placeholder="Search by station, district or brand…" autocomplete="off" />
+    </div>
+
+    <div class="filter-row" id="regionFilters" role="group" aria-label="Filter by district">
+      <button class="filter" data-filter="region" data-val="all" aria-pressed="true">All districts</button>
+      <button class="filter" data-filter="region" data-val="Chennai & Suburbs" aria-pressed="false">Chennai &amp; Chengalpattu</button>
+      <button class="filter" data-filter="region" data-val="Coimbatore Region" aria-pressed="false">Coimbatore &amp; Tiruppur</button>
+      <button class="filter" data-filter="region" data-val="Salem & Erode" aria-pressed="false">Salem &amp; Erode</button>
+      <button class="filter" data-filter="region" data-val="Central TN" aria-pressed="false">Trichy &amp; Thanjavur</button>
+      <button class="filter" data-filter="region" data-val="South TN" aria-pressed="false">Madurai &amp; South</button>
+      <button class="filter" data-filter="region" data-val="North & Vellore" aria-pressed="false">Vellore &amp; North</button>
+    </div>
+
+    <div class="filter-row" id="statusFilters" role="group" aria-label="Filter by status">
+      <button class="filter" data-filter="status" data-val="all" aria-pressed="true">All statuses</button>
+      <button class="filter" data-filter="status" data-val="optimal" aria-pressed="false">🟢 Clear</button>
+      <button class="filter" data-filter="status" data-val="moderate" aria-pressed="false">🟡 Moderate</button>
+      <button class="filter" data-filter="status" data-val="critical" aria-pressed="false">🔴 Congested</button>
+    </div>
+  </section>
+
+  <!-- ============ STATIONS ============ -->
+  <section aria-labelledby="gridHeading">
+    <div class="section-head">
+      <h2 class="section-title" id="gridHeading">CNG stations</h2>
+      <span class="section-count" id="resultsCount">Loading…</span>
+    </div>
+    <div class="stations" id="stationsGrid"></div>
+  </section>
+
+  <!-- ============ REPORT ============ -->
+  <section class="panel report" id="reportSection" aria-labelledby="reportHeading">
+    <div class="report-head">
+      <h2 class="section-title" id="reportHeading">Report live station status</h2>
+      <p>Help thousands of Tamil Nadu drivers keep the network accurate.</p>
+    </div>
+
+    <form id="reportForm" class="report-grid">
+      <div class="field span-2">
+        <label for="stationSelect">Station</label>
+        <select id="stationSelect" class="control" required></select>
+      </div>
+
+      <div class="field">
+        <label for="queueCondition">Current condition</label>
+        <select id="queueCondition" class="control" required>
+          <option value="optimal">🟢 Clear · instant fill</option>
+          <option value="moderate">🟡 Moderate wait (~15 min)</option>
+          <option value="critical">🔴 Heavy queue (30+ min)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="reportedMetric" id="reportMetricLabel">Dispenser pressure (bar)</label>
+        <input type="number" id="reportedMetric" class="control" value="210" min="80" max="250" required />
+      </div>
+
+      <div class="field span-2">
+        <button type="submit" class="btn-primary" style="width:100%;height:46px;">
+          Broadcast live update
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <span><strong>GeoEnergy Tamil Nadu</strong> · Live CNG &amp; EV network intelligence</span>
+    <span>Data is community-sourced · verify before travelling</span>
+  </div>
+</footer>
+
+<a href="#reportSection" class="fab">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+  Report
+</a>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
+// Set API_BASE to the backend URL (Render). Leave empty for local dev.
+const API_BASE = 'https://new-sta.onrender.com';
+
+/* =========================================================
+   DATA — CNG STATIONS
+   ========================================================= */
+const cngStationsData = [
+  { id:"tn-01", name:"AG&P Pratham — Maraimalai Nagar", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.7937, lon:80.0253, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-02", name:"IndianOil CNG — K. K. Nagar", region:"Chennai & Suburbs", brand:"IOCL", lat:13.0410, lon:80.1994, status:"MODERATE", waitMins:18, metric:195 },
+  { id:"tn-03", name:"Torrent Gas — Medavakkam", region:"Chennai & Suburbs", brand:"Torrent Gas", lat:12.9200, lon:80.1880, status:"CRITICAL", waitMins:40, metric:120 },
+  { id:"tn-04", name:"AG&P Pratham — Tambaram Mudichur Rd", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.9249, lon:80.1000, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-05", name:"HPCL Nava Sakthi — Vandalur", region:"Chennai & Suburbs", brand:"HPCL", lat:12.8914, lon:80.0812, status:"MODERATE", waitMins:16, metric:185 },
+  { id:"tn-06", name:"IOCL CNG — Ambattur Industrial Estate", region:"Chennai & Suburbs", brand:"IOCL", lat:13.1143, lon:80.1548, status:"OPTIMAL", waitMins:5, metric:220 },
+  { id:"tn-07", name:"BPCL CNG Hub — Koyambedu", region:"Chennai & Suburbs", brand:"BPCL", lat:13.0694, lon:80.1948, status:"CRITICAL", waitMins:38, metric:135 },
+  { id:"tn-08", name:"Torrent Gas — Sholinganallur OMR", region:"Chennai & Suburbs", brand:"Torrent Gas", lat:12.9010, lon:80.2279, status:"MODERATE", waitMins:15, metric:190 },
+  { id:"tn-09", name:"AG&P Pratham — Guduvanchery Bypass", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.8439, lon:80.0617, status:"OPTIMAL", waitMins:3, metric:225 },
+  { id:"tn-10", name:"IOCL CNG — Porur Trunk Road", region:"Chennai & Suburbs", brand:"IOCL", lat:13.0382, lon:80.1565, status:"MODERATE", waitMins:20, metric:180 },
+  { id:"tn-11", name:"HPCL CNG — Velachery Main Rd", region:"Chennai & Suburbs", brand:"HPCL", lat:12.9759, lon:80.2212, status:"CRITICAL", waitMins:35, metric:140 },
+  { id:"tn-12", name:"Torrent Gas — Perungudi OMR", region:"Chennai & Suburbs", brand:"Torrent Gas", lat:12.9654, lon:80.2412, status:"OPTIMAL", waitMins:8, metric:215 },
+  { id:"tn-13", name:"AG&P Pratham — Sriperumbudur SIPCOT", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.9724, lon:79.9463, status:"OPTIMAL", waitMins:5, metric:230 },
+  { id:"tn-14", name:"IOCL CNG — Poonamallee Bypass", region:"Chennai & Suburbs", brand:"IOCL", lat:13.0489, lon:80.0984, status:"MODERATE", waitMins:14, metric:195 },
+  { id:"tn-15", name:"BPCL CNG — Madhavaram Roundtana", region:"Chennai & Suburbs", brand:"BPCL", lat:13.1489, lon:80.2314, status:"OPTIMAL", waitMins:7, metric:215 },
+  { id:"tn-16", name:"AG&P Pratham — Oragadam Industrial Corridor", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.8368, lon:79.9402, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-17", name:"HPCL CNG — Pallavaram GST Rd", region:"Chennai & Suburbs", brand:"HPCL", lat:12.9675, lon:80.1491, status:"CRITICAL", waitMins:32, metric:145 },
+  { id:"tn-18", name:"IOCL CNG — Red Hills GNT Road", region:"Chennai & Suburbs", brand:"IOCL", lat:13.1994, lon:80.1963, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-19", name:"AG&P Pratham — Singaperumal Koil", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.7638, lon:80.0033, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-20", name:"Torrent Gas — Navalur Junction", region:"Chennai & Suburbs", brand:"Torrent Gas", lat:12.8471, lon:80.2263, status:"MODERATE", waitMins:16, metric:185 },
+  { id:"tn-21", name:"IOCL CNG — Avadi CTH Road", region:"Chennai & Suburbs", brand:"IOCL", lat:13.1186, lon:80.1017, status:"MODERATE", waitMins:15, metric:190 },
+  { id:"tn-22", name:"BPCL CNG — Thirumazhisai NH48", region:"Chennai & Suburbs", brand:"BPCL", lat:13.0562, lon:80.0577, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-23", name:"AG&P Pratham — Kanchipuram Bypass", region:"Chennai & Suburbs", brand:"AG&P Pratham", lat:12.8342, lon:79.7036, status:"OPTIMAL", waitMins:8, metric:215 },
+  { id:"tn-24", name:"IOCL CNG — Gummidipoondi SIPCOT", region:"Chennai & Suburbs", brand:"IOCL", lat:13.4072, lon:80.1299, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-25", name:"HPCL CNG — Manali Expressway", region:"Chennai & Suburbs", brand:"HPCL", lat:13.1706, lon:80.2608, status:"MODERATE", waitMins:12, metric:195 },
+
+  { id:"tn-26", name:"IOCL CNG — Peelamedu Avinashi Rd", region:"Coimbatore Region", brand:"IOCL", lat:11.0269, lon:77.0104, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-27", name:"BPCL CNG — Gandhipuram Central", region:"Coimbatore Region", brand:"BPCL", lat:11.0168, lon:76.9678, status:"CRITICAL", waitMins:36, metric:130 },
+  { id:"tn-28", name:"Torrent Gas — Saravanampatti IT Corridor", region:"Coimbatore Region", brand:"Torrent Gas", lat:11.0797, lon:76.9997, status:"OPTIMAL", waitMins:8, metric:215 },
+  { id:"tn-29", name:"HPCL CNG — Singanallur Trichy Rd", region:"Coimbatore Region", brand:"HPCL", lat:10.9993, lon:77.0264, status:"MODERATE", waitMins:18, metric:185 },
+  { id:"tn-30", name:"Torrent Gas — Thudiyalur Mettupalayam Rd", region:"Coimbatore Region", brand:"Torrent Gas", lat:11.0805, lon:76.9407, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-31", name:"IOCL CNG — Pollachi Bypass", region:"Coimbatore Region", brand:"IOCL", lat:10.6580, lon:77.0090, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-32", name:"BPCL CNG — Sulur Aero Base Rd", region:"Coimbatore Region", brand:"BPCL", lat:11.0343, lon:77.1264, status:"OPTIMAL", waitMins:5, metric:220 },
+  { id:"tn-33", name:"HPCL CNG — Malumichampatti Pollachi Rd", region:"Coimbatore Region", brand:"HPCL", lat:10.9038, lon:76.9890, status:"MODERATE", waitMins:14, metric:190 },
+  { id:"tn-34", name:"Torrent Gas — Ukkadam South Bypass", region:"Coimbatore Region", brand:"Torrent Gas", lat:10.9856, lon:76.9602, status:"CRITICAL", waitMins:30, metric:145 },
+  { id:"tn-35", name:"IOCL CNG — Kuniyamuthur Palakkad Rd", region:"Coimbatore Region", brand:"IOCL", lat:10.9572, lon:76.9450, status:"OPTIMAL", waitMins:7, metric:215 },
+  { id:"tn-36", name:"BPCL CNG — Avinashi Highway Hub", region:"Coimbatore Region", brand:"BPCL", lat:11.1927, lon:77.2689, status:"OPTIMAL", waitMins:5, metric:230 },
+  { id:"tn-37", name:"Torrent Gas — Tiruppur Palladam Road", region:"Coimbatore Region", brand:"Torrent Gas", lat:11.0607, lon:77.3198, status:"MODERATE", waitMins:20, metric:180 },
+  { id:"tn-38", name:"IOCL CNG — Tiruppur Kangeyam Rd", region:"Coimbatore Region", brand:"IOCL", lat:11.1075, lon:77.3752, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-39", name:"HPCL CNG — Dharapuram Town", region:"Coimbatore Region", brand:"HPCL", lat:10.7289, lon:77.5255, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-40", name:"Torrent Gas — Palladam High Street", region:"Coimbatore Region", brand:"Torrent Gas", lat:11.0045, lon:77.2882, status:"MODERATE", waitMins:15, metric:190 },
+
+  { id:"tn-41", name:"AG&P Pratham — Seelanaickenpatti Bypass", region:"Salem & Erode", brand:"AG&P Pratham", lat:11.6241, lon:78.1465, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-42", name:"IOCL CNG — Salem Steel Plant Road", region:"Salem & Erode", brand:"IOCL", lat:11.6643, lon:78.0772, status:"OPTIMAL", waitMins:7, metric:220 },
+  { id:"tn-43", name:"BPCL CNG — Omalur Junction NH44", region:"Salem & Erode", brand:"BPCL", lat:11.7432, lon:78.0416, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-44", name:"HPCL CNG — Meyyanur Junction", region:"Salem & Erode", brand:"HPCL", lat:11.6698, lon:78.1362, status:"CRITICAL", waitMins:35, metric:140 },
+  { id:"tn-45", name:"AG&P Pratham — Kondalampatti Flyover", region:"Salem & Erode", brand:"AG&P Pratham", lat:11.6180, lon:78.1250, status:"MODERATE", waitMins:14, metric:195 },
+  { id:"tn-46", name:"IOCL CNG — Attur Town Bypass", region:"Salem & Erode", brand:"IOCL", lat:11.5976, lon:78.5991, status:"OPTIMAL", waitMins:3, metric:225 },
+  { id:"tn-47", name:"BPCL CNG — Sankari NH544 Corridor", region:"Salem & Erode", brand:"BPCL", lat:11.4827, lon:77.8690, status:"OPTIMAL", waitMins:6, metric:225 },
+  { id:"tn-48", name:"Torrent Gas — Perundurai SIPCOT", region:"Salem & Erode", brand:"Torrent Gas", lat:11.2758, lon:77.5872, status:"OPTIMAL", waitMins:5, metric:220 },
+  { id:"tn-49", name:"IOCL CNG — Erode Chithode Tollway", region:"Salem & Erode", brand:"IOCL", lat:11.4116, lon:77.6748, status:"OPTIMAL", waitMins:6, metric:225 },
+  { id:"tn-50", name:"HPCL CNG — Erode Brough Road", region:"Salem & Erode", brand:"HPCL", lat:11.3410, lon:77.7172, status:"CRITICAL", waitMins:32, metric:135 },
+  { id:"tn-51", name:"Torrent Gas — Bhavani River Corridor", region:"Salem & Erode", brand:"Torrent Gas", lat:11.4485, lon:77.6830, status:"MODERATE", waitMins:12, metric:195 },
+  { id:"tn-52", name:"IOCL CNG — Gobichettipalayam Ring Rd", region:"Salem & Erode", brand:"IOCL", lat:11.4554, lon:77.4372, status:"OPTIMAL", waitMins:5, metric:220 },
+  { id:"tn-53", name:"AG&P Pratham — Rasipuram Highway", region:"Salem & Erode", brand:"AG&P Pratham", lat:11.4598, lon:78.1729, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-54", name:"HPCL CNG — Tiruchengode Bypass", region:"Salem & Erode", brand:"HPCL", lat:11.3789, lon:77.8963, status:"MODERATE", waitMins:15, metric:190 },
+  { id:"tn-55", name:"BPCL CNG — Namakkal Collectorate Bypass", region:"Salem & Erode", brand:"BPCL", lat:11.2189, lon:78.1674, status:"OPTIMAL", waitMins:5, metric:225 },
+
+  { id:"tn-56", name:"Torrent Gas — Trichy Thillai Nagar", region:"Central TN", brand:"Torrent Gas", lat:10.8260, lon:78.6856, status:"MODERATE", waitMins:18, metric:185 },
+  { id:"tn-57", name:"IOCL CNG — Trichy KK Nagar", region:"Central TN", brand:"IOCL", lat:10.7785, lon:78.6942, status:"OPTIMAL", waitMins:8, metric:215 },
+  { id:"tn-58", name:"BPCL CNG — Samayapuram NH45 Toll", region:"Central TN", brand:"BPCL", lat:10.9234, lon:78.7391, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-59", name:"Torrent Gas — BHEL Township Thuvakudi", region:"Central TN", brand:"Torrent Gas", lat:10.7584, lon:78.7998, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-60", name:"HPCL CNG — Srirangam Mambalasalai", region:"Central TN", brand:"HPCL", lat:10.8540, lon:78.6920, status:"CRITICAL", waitMins:38, metric:130 },
+  { id:"tn-61", name:"IOCL CNG — Manapparai Dindigul Highway", region:"Central TN", brand:"IOCL", lat:10.6074, lon:78.4234, status:"OPTIMAL", waitMins:3, metric:230 },
+  { id:"tn-62", name:"Torrent Gas — Thanjavur Old Bus Stand Rd", region:"Central TN", brand:"Torrent Gas", lat:10.7870, lon:79.1378, status:"MODERATE", waitMins:16, metric:190 },
+  { id:"tn-63", name:"IOCL CNG — Thanjavur Medical College Rd", region:"Central TN", brand:"IOCL", lat:10.7554, lon:79.1065, status:"OPTIMAL", waitMins:7, metric:220 },
+  { id:"tn-64", name:"BPCL CNG — Kumbakonam Bypass", region:"Central TN", brand:"BPCL", lat:10.9602, lon:79.3845, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-65", name:"HPCL CNG — Pattukkottai Main Road", region:"Central TN", brand:"HPCL", lat:10.4287, lon:79.3175, status:"OPTIMAL", waitMins:5, metric:215 },
+  { id:"tn-66", name:"Torrent Gas — Karur Bypass Thanthonimalai", region:"Central TN", brand:"Torrent Gas", lat:10.9324, lon:78.0842, status:"MODERATE", waitMins:14, metric:195 },
+  { id:"tn-67", name:"IOCL CNG — Kulithalai Highway", region:"Central TN", brand:"IOCL", lat:10.9332, lon:78.4208, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-68", name:"BPCL CNG — Pudukkottai Ring Road", region:"Central TN", brand:"BPCL", lat:10.3797, lon:78.8208, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-69", name:"Torrent Gas — Aranthangi Junction", region:"Central TN", brand:"Torrent Gas", lat:10.1642, lon:78.9961, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-70", name:"IOCL CNG — Mayiladuthurai Town", region:"Central TN", brand:"IOCL", lat:11.1075, lon:79.6524, status:"OPTIMAL", waitMins:5, metric:215 },
+
+  { id:"tn-71", name:"Torrent Gas — Madurai Mattuthavani Hub", region:"South TN", brand:"Torrent Gas", lat:9.9391, lon:78.1564, status:"CRITICAL", waitMins:42, metric:125 },
+  { id:"tn-72", name:"IOCL CNG — Arapalayam Main Bus Stand", region:"South TN", brand:"IOCL", lat:9.9328, lon:78.1065, status:"MODERATE", waitMins:20, metric:180 },
+  { id:"tn-73", name:"BPCL CNG — Kappalur Industrial Bypass", region:"South TN", brand:"BPCL", lat:9.8450, lon:78.0287, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-74", name:"Torrent Gas — Thirunagar GST Road", region:"South TN", brand:"Torrent Gas", lat:9.8789, lon:78.0645, status:"MODERATE", waitMins:15, metric:190 },
+  { id:"tn-75", name:"HPCL CNG — Othakadai High Road", region:"South TN", brand:"HPCL", lat:9.9658, lon:78.1923, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-76", name:"IOCL CNG — Melur NH38 Corridor", region:"South TN", brand:"IOCL", lat:10.0345, lon:78.3345, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-77", name:"AG&P Pratham — Dindigul Bypass NH44", region:"South TN", brand:"AG&P Pratham", lat:10.3673, lon:77.9803, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-78", name:"HPCL CNG — Palani Road Junction", region:"South TN", brand:"HPCL", lat:10.4502, lon:77.5189, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-79", name:"IOCL CNG — Batlagundu Ghat Entry", region:"South TN", brand:"IOCL", lat:10.1607, lon:77.7634, status:"OPTIMAL", waitMins:3, metric:230 },
+  { id:"tn-80", name:"Torrent Gas — Tirunelveli Palayamkottai", region:"South TN", brand:"Torrent Gas", lat:8.7139, lon:77.7567, status:"MODERATE", waitMins:16, metric:190 },
+  { id:"tn-81", name:"IOCL CNG — Vannarpettai Bypass", region:"South TN", brand:"IOCL", lat:8.7289, lon:77.7280, status:"OPTIMAL", waitMins:7, metric:220 },
+  { id:"tn-82", name:"BPCL CNG — Gangaikondan SIPCOT", region:"South TN", brand:"BPCL", lat:8.8540, lon:77.7845, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-83", name:"HPCL CNG — Nanguneri SEZ Corridor", region:"South TN", brand:"HPCL", lat:8.4890, lon:77.6620, status:"OPTIMAL", waitMins:3, metric:235 },
+  { id:"tn-84", name:"Torrent Gas — Tuticorin Port Expressway", region:"South TN", brand:"Torrent Gas", lat:8.7642, lon:78.1348, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-85", name:"IOCL CNG — Kovilpatti Bypass NH44", region:"South TN", brand:"IOCL", lat:9.1729, lon:77.8689, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-86", name:"BPCL CNG — Sivakasi Town Ring Rd", region:"South TN", brand:"BPCL", lat:9.4533, lon:77.7981, status:"MODERATE", waitMins:15, metric:195 },
+  { id:"tn-87", name:"HPCL CNG — Virudhunagar Collectorate", region:"South TN", brand:"HPCL", lat:9.5872, lon:77.9514, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-88", name:"Torrent Gas — Rajapalayam Main Rd", region:"South TN", brand:"Torrent Gas", lat:9.4532, lon:77.5540, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-89", name:"IOCL CNG — Karaikudi College Rd", region:"South TN", brand:"IOCL", lat:10.0734, lon:78.7732, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-90", name:"BPCL CNG — Ramanathapuram East Coast Rd", region:"South TN", brand:"BPCL", lat:9.3639, lon:78.8395, status:"OPTIMAL", waitMins:4, metric:225 },
+
+  { id:"tn-91", name:"AG&P Pratham — Katpadi Railway Bypass", region:"North & Vellore", brand:"AG&P Pratham", lat:12.9815, lon:79.1325, status:"MODERATE", waitMins:14, metric:195 },
+  { id:"tn-92", name:"IOCL CNG — Vellore Sathuvachari NH48", region:"North & Vellore", brand:"IOCL", lat:12.9350, lon:79.1670, status:"OPTIMAL", waitMins:7, metric:220 },
+  { id:"tn-93", name:"BPCL CNG — Ranipet SIPCOT Industrial Hub", region:"North & Vellore", brand:"BPCL", lat:12.9460, lon:79.3320, status:"OPTIMAL", waitMins:4, metric:230 },
+  { id:"tn-94", name:"AG&P Pratham — Ambur Leather Cluster", region:"North & Vellore", brand:"AG&P Pratham", lat:12.7904, lon:78.7165, status:"OPTIMAL", waitMins:5, metric:225 },
+  { id:"tn-95", name:"HPCL CNG — Vaniyambadi Highway", region:"North & Vellore", brand:"HPCL", lat:12.6825, lon:78.6210, status:"OPTIMAL", waitMins:4, metric:225 },
+  { id:"tn-96", name:"AG&P Pratham — Hosur SIPCOT Phase 2", region:"North & Vellore", brand:"AG&P Pratham", lat:12.7409, lon:77.8253, status:"OPTIMAL", waitMins:6, metric:225 },
+  { id:"tn-97", name:"IOCL CNG — Hosur Bagalur Road", region:"North & Vellore", brand:"IOCL", lat:12.7750, lon:77.8540, status:"MODERATE", waitMins:18, metric:190 },
+  { id:"tn-98", name:"BPCL CNG — Krishnagiri Toll Plaza NH44", region:"North & Vellore", brand:"BPCL", lat:12.5186, lon:78.2138, status:"OPTIMAL", waitMins:5, metric:230 },
+  { id:"tn-99", name:"Torrent Gas — Villupuram Bypass NH45", region:"North & Vellore", brand:"Torrent Gas", lat:11.9401, lon:79.4861, status:"OPTIMAL", waitMins:6, metric:220 },
+  { id:"tn-100", name:"AG&P Pratham — Tindivanam GST Road", region:"North & Vellore", brand:"AG&P Pratham", lat:12.2253, lon:79.6500, status:"OPTIMAL", waitMins:5, metric:225 }
+];
+
+/* =========================================================
+   DATA — EV FAST-CHARGING HUBS
+   ========================================================= */
+const evStationsData = [
+  { id:"ev-01", name:"Zeon Charging — Express Avenue", region:"Chennai & Suburbs", brand:"Zeon", lat:13.0579, lon:80.2642, status:"MODERATE", waitMins:15, metric:60, free:1, total:2 },
+  { id:"ev-02", name:"Tata Power — Phoenix Marketcity", region:"Chennai & Suburbs", brand:"Tata Power", lat:12.9918, lon:80.2168, status:"CRITICAL", waitMins:45, metric:30, free:0, total:3 },
+  { id:"ev-03", name:"Jio-bp pulse — OMR Navalur", region:"Chennai & Suburbs", brand:"Jio-bp", lat:12.8459, lon:80.2265, status:"OPTIMAL", waitMins:0, metric:150, free:4, total:4 },
+  { id:"ev-04", name:"Relux Electric — Sriperumbudur NH48", region:"Chennai & Suburbs", brand:"Relux", lat:12.9712, lon:79.9455, status:"OPTIMAL", waitMins:5, metric:120, free:2, total:2 },
+  { id:"ev-05", name:"ChargeZone — Koyambedu Hub", region:"Chennai & Suburbs", brand:"ChargeZone", lat:13.0694, lon:80.1948, status:"MODERATE", waitMins:20, metric:60, free:1, total:4 },
+  { id:"ev-06", name:"Zeon Charging — Avinashi Road", region:"Coimbatore Region", brand:"Zeon", lat:11.0269, lon:77.0104, status:"OPTIMAL", waitMins:5, metric:150, free:2, total:4 },
+  { id:"ev-07", name:"Tata Power — Brookefields Mall", region:"Coimbatore Region", brand:"Tata Power", lat:11.0068, lon:76.9678, status:"CRITICAL", waitMins:35, metric:50, free:0, total:2 },
+  { id:"ev-08", name:"Jio-bp pulse — L&T Bypass", region:"Coimbatore Region", brand:"Jio-bp", lat:10.9856, lon:76.9602, status:"OPTIMAL", waitMins:0, metric:120, free:3, total:3 },
+  { id:"ev-09", name:"ChargeZone — Perundurai SIPCOT", region:"Salem & Erode", brand:"ChargeZone", lat:11.2758, lon:77.5872, status:"OPTIMAL", waitMins:5, metric:150, free:2, total:2 },
+  { id:"ev-10", name:"Zeon Charging — Salem NH44 Toll", region:"Salem & Erode", brand:"Zeon", lat:11.7432, lon:78.0416, status:"MODERATE", waitMins:15, metric:60, free:1, total:3 },
+  { id:"ev-11", name:"Relux Electric — Trichy BHEL", region:"Central TN", brand:"Relux", lat:10.7584, lon:78.7998, status:"OPTIMAL", waitMins:0, metric:150, free:2, total:2 },
+  { id:"ev-12", name:"Tata Power — Thanjavur Bypass", region:"Central TN", brand:"Tata Power", lat:10.7870, lon:79.1378, status:"MODERATE", waitMins:20, metric:60, free:1, total:2 },
+  { id:"ev-13", name:"Zeon Charging — Madurai Mattuthavani", region:"South TN", brand:"Zeon", lat:9.9391, lon:78.1564, status:"CRITICAL", waitMins:40, metric:30, free:0, total:2 },
+  { id:"ev-14", name:"Jio-bp pulse — Tirunelveli NH44", region:"South TN", brand:"Jio-bp", lat:8.7139, lon:77.7567, status:"OPTIMAL", waitMins:5, metric:120, free:2, total:2 },
+  { id:"ev-15", name:"ChargeZone — Hosur SIPCOT Phase 1", region:"North & Vellore", brand:"ChargeZone", lat:12.7409, lon:77.8253, status:"OPTIMAL", waitMins:0, metric:150, free:4, total:4 },
+  { id:"ev-16", name:"Zeon Charging — Krishnagiri Toll", region:"North & Vellore", brand:"Zeon", lat:12.5186, lon:78.2138, status:"MODERATE", waitMins:15, metric:60, free:1, total:2 },
+  { id:"ev-17", name:"Tata Power — Vellore Highway", region:"North & Vellore", brand:"Tata Power", lat:12.9350, lon:79.1670, status:"OPTIMAL", waitMins:5, metric:120, free:2, total:2 }
+];
+
+/* =========================================================
+   MODE CONFIG
+   ========================================================= */
+const MODE_CONFIG = {
+  cng: {
+    sub: 'Smart CNG refuelling network',
+    live: '100 live CNG hubs',
+    fastLabel: 'Fast lanes (<10 min)',
+    qualityLabel: 'High pressure (≥200 bar)',
+    avgLabel: 'Avg TN network wait',
+    plannerTitle: 'Highway corridor CNG trip planner',
+    rangeLabel: 'Cylinder range',
+    gridTitle: 'CNG stations',
+    reportMetricLabel: 'Dispenser pressure (bar)',
+    reportPlaceholder: '210',
+    reportDefault: 210,
+    reportMin: 80,
+    reportMax: 250,
+    metricUnit: 'bar',
+    metricHeading: 'Dispenser pressure',
+    metricMax: 240,
+    qualityTest: s => s.metric >= 200
+  },
+  ev: {
+    sub: 'Fast EV charging network',
+    live: '17 live EV fast-hubs',
+    fastLabel: 'Instant access (no wait)',
+    qualityLabel: 'Ultra-fast (150 kW+)',
+    avgLabel: 'Avg TN network wait',
+    plannerTitle: 'Highway corridor EV trip planner',
+    rangeLabel: 'Battery range',
+    gridTitle: 'EV charging hubs',
+    reportMetricLabel: 'Free charging guns',
+    reportPlaceholder: '2',
+    reportDefault: 2,
+    reportMin: 0,
+    reportMax: 10,
+    metricUnit: 'kW',
+    metricHeading: 'Max DC charge speed',
+    metricMax: 150,
+    qualityTest: s => s.metric >= 150
+  }
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+let toastTimer;
+function showToast(message) {
+  const toast = $('#toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3400);
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
+  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+}
+
+const escapeHtml = (str) => String(str).replace(/[&<>"']/g, c => (
+  { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+));
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let currentMode = 'cng';
+let stations = [];
+let activeRegion = 'all';
+let activeStatus = 'all';
+let userLocation = null;
+let recognition = null;
+let isListening = false;
+let stationCatalog = { cng: cngStationsData, ev: evStationsData };
+
+const cloudOverrides = new Map(); // id -> { status, waitMins, metric }
+
+/* =========================================================
+   BUILD STATION LIST
+   ========================================================= */
+function buildStations() {
+  const raw = stationCatalog[currentMode];
+
+  stations = raw.map(src => {
+    const st = {
+      ...src,
+      status: src.status.toUpperCase(),
+      statusType: src.status.toLowerCase(),
+      waitTime: `~${src.waitMins} min`
+    };
+    const override = cloudOverrides.get(st.id);
+    if (override) applyOverride(st, override);
+    if (userLocation) st.distance = haversine(userLocation.lat, userLocation.lon, st.lat, st.lon);
+    return st;
+  });
+
+  if (userLocation) {
+    stations.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+  }
+}
+
+function applyOverride(st, o) {
+  st.status = String(o.status).toUpperCase();
+  st.statusType = o.status;
+  st.waitMins = o.waitMins;
+  st.waitTime = `~${o.waitMins} min`;
+  if (st.id.startsWith('ev-')) {
+    st.free = clamp(o.metric, 0, st.total || 4);
+  } else {
+    st.metric = o.metric;
+  }
+}
+
+/* =========================================================
+   MODE SWITCH
+   ========================================================= */
+function switchMode(mode) {
+  if (mode === currentMode && stations.length) return;
+  currentMode = mode;
+  document.body.dataset.mode = mode;
+
+  const cfg = MODE_CONFIG[mode];
+
+  $('#tabCng').setAttribute('aria-selected', String(mode === 'cng'));
+  $('#tabEv').setAttribute('aria-selected', String(mode === 'ev'));
+
+  $('#brandSub').textContent   = cfg.sub;
+  $('#liveCount').textContent  = cfg.live;
+  $('#kpiFastLabel').textContent = cfg.fastLabel;
+  $('#kpiQualityLabel').textContent = cfg.qualityLabel;
+  $('#kpiAvgLabel').textContent = cfg.avgLabel;
+  $('#plannerTitle').textContent = cfg.plannerTitle;
+  $('#rangeLabel').textContent = cfg.rangeLabel;
+  $('#gridHeading').textContent = cfg.gridTitle;
+
+  $('#reportMetricLabel').textContent = cfg.reportMetricLabel;
+  const metricInput = $('#reportedMetric');
+  metricInput.placeholder = cfg.reportPlaceholder;
+  metricInput.value = cfg.reportDefault;
+  metricInput.min = cfg.reportMin;
+  metricInput.max = cfg.reportMax;
+
+  // Range options
+  $$('#tripRange option').forEach(o => { o.style.display = 'none'; });
+  if (mode === 'cng') {
+    ['160','200','240'].forEach(v => {
+      const o = $(`#tripRange option[value="${v}"]`);
+      if (o) o.style.display = 'block';
+    });
+    $('#tripRange').value = '200';
+  } else {
+    ['300','400'].forEach(v => {
+      const o = $(`#tripRange option[value="${v}"]`);
+      if (o) o.style.display = 'block';
+    });
+    $('#tripRange').value = '300';
+  }
+
+  renderAiChips();
+  buildStations();
+  populateDropdown();
+  renderStations();
+  updateKpis();
+  askAi('best');
+
+  // Hide stale trip results on mode change
+  $('#tripResults').classList.remove('show');
+}
+
+/* =========================================================
+   AI
+   ========================================================= */
+function renderAiChips() {
+  const chips = currentMode === 'cng'
+    ? [
+        { action:'best',     label:'⚡ Recommended pick' },
+        { action:'metric',   label:'⛽ High pressure (225+ bar)' },
+        { action:'forecast', label:'🕒 60-min queue outlook' }
+      ]
+    : [
+        { action:'best',     label:'⚡ Optimal fast charger' },
+        { action:'metric',   label:'🔋 Ultra-fast (150 kW+)' },
+        { action:'forecast', label:'🕒 Gun availability forecast' }
+      ];
+
+  $('#aiChips').innerHTML = chips
+    .map(c => `<button class="chip" data-action="${c.action}" type="button">${c.label}</button>`)
+    .join('');
+}
+
+function computeBestStation() {
+  let best = null;
+  let bestScore = -Infinity;
+
+  for (const st of stations) {
+    const dist = st.distance ? parseFloat(st.distance) : 10;
+    const score = currentMode === 'cng'
+      ? (st.metric * 0.45) - (st.waitMins * 2.0) - (dist * 1.5)
+      : (st.metric * 0.30) - (st.waitMins * 1.5) - (dist * 1.5);
+    if (score > bestScore) { bestScore = score; best = st; }
+  }
+  return best;
+}
+
+function askAi(action) {
+  const out = $('#aiOutput');
+  const cfg = MODE_CONFIG[currentMode];
+  const best = computeBestStation();
+  if (!best) return;
+
+  if (action === 'best') {
+    const distNote = best.distance ? ` (${best.distance} km away)` : '';
+    const what = currentMode === 'cng' ? 'dispenser pressure' : 'charge speed';
+    out.innerHTML = `<strong>Optimal recommendation —</strong> head to <strong>${escapeHtml(best.name)}</strong>${distNote}. ${what.charAt(0).toUpperCase() + what.slice(1)} of <strong>${best.metric} ${cfg.metricUnit}</strong> with an estimated wait of <strong>${best.waitTime}</strong>.`;
+  }
+  else if (action === 'metric') {
+    const pool = currentMode === 'cng'
+      ? stations.filter(s => s.metric >= 225).slice(0, 4).map(s => s.name.split('—')[1]?.trim() || s.name)
+      : [...new Set(stations.filter(s => s.metric >= 150).map(s => s.brand))].slice(0, 5);
+
+    if (!pool.length) {
+      out.innerHTML = `<strong>No hubs currently meet that threshold.</strong> Showing the best available alternatives instead.`;
+      return;
+    }
+    out.innerHTML = currentMode === 'cng'
+      ? `<strong>High-pressure verified (≥225 bar) —</strong> full-tank fills with no nozzle lag at <strong>${escapeHtml(pool.join(', '))}</strong>.`
+      : `<strong>Ultra-fast guns active —</strong> 150 kW+ DC charging available at <strong>${escapeHtml(pool.join(', '))}</strong>.`;
+  }
+  else if (action === 'forecast') {
+    const note = currentMode === 'cng'
+      ? 'Industrial shift traffic is projected to peak'
+      : 'Highway transit charging is projected to peak';
+    out.innerHTML = `<strong>60-minute predictive alert —</strong> ${note} along <strong>Sriperumbudur</strong> and <strong>Coimbatore Avinashi Road</strong> between 5:30 PM and 7:30 PM. Refuel or recharge before the window.`;
+  }
+}
+
+/* =========================================================
+   KPIs
+   ========================================================= */
+function updateKpis() {
+  const cfg = MODE_CONFIG[currentMode];
+
+  $('#kpiTotal').textContent = stations.length;
+
+  const fastCount = currentMode === 'cng'
+    ? stations.filter(s => s.waitMins < 10).length
+    : stations.filter(s => s.waitMins === 0).length;
+  $('#kpiFast').textContent = fastCount;
+
+  $('#kpiQuality').textContent = stations.filter(cfg.qualityTest).length;
+
+  const avg = stations.length
+    ? Math.round(stations.reduce((sum, s) => sum + s.waitMins, 0) / stations.length)
+    : 0;
+  $('#kpiAvg').textContent = `~${avg} min`;
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderStations() {
+  const grid = $('#stationsGrid');
+  const cfg = MODE_CONFIG[currentMode];
+  const query = $('#searchInput').value.trim().toLowerCase();
+  const best = computeBestStation();
+
+  const filtered = stations.filter(st => {
+    const matchesQuery = !query ||
+      st.name.toLowerCase().includes(query) ||
+      st.region.toLowerCase().includes(query) ||
+      st.brand.toLowerCase().includes(query);
+    const matchesRegion = activeRegion === 'all' || st.region === activeRegion;
+    const matchesStatus = activeStatus === 'all' || st.statusType === activeStatus;
+    return matchesQuery && matchesRegion && matchesStatus;
+  });
+
+  $('#resultsCount').textContent =
+    `Showing ${filtered.length} of ${stations.length} hubs`;
+
+  if (!filtered.length) {
+    grid.innerHTML = `
+      <div class="empty">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <h3>No hubs match your criteria</h3>
+        <p>Try a different keyword or clear the active filters.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((st, i) => stationCard(st, best, cfg, i)).join('');
+}
+
+function stationCard(st, best, cfg, index) {
+  const isBest = best && best.id === st.id;
+  const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${st.lat},${st.lon}`;
+
+  const metricValue = currentMode === 'cng'
+    ? `${st.metric} bar`
+    : `${st.metric} kW`;
+
+  const fillPercent = clamp(
+    Math.round((st.metric / cfg.metricMax) * 100), 6, 100
+  );
+
+  const distanceHtml = st.distance
+    ? `<span class="dist">📍 ${st.distance} km</span><span class="sep">•</span>`
+    : '';
+
+  const gunsRow = currentMode === 'ev'
+    ? `<div class="metric-row">
+         <span>Free guns</span>
+         <b>${st.free} / ${st.total}</b>
+       </div>`
+    : '';
+
+  return `
+    <article class="card${isBest ? ' is-best' : ''}" style="--i:${index % 14}">
+      ${isBest ? '<span class="ribbon">AI pick</span>' : ''}
+
+      <div class="card-head">
+        <div class="card-title">
+          <h3>${escapeHtml(st.name)}</h3>
+          <p class="card-meta">${distanceHtml}<span>${escapeHtml(st.region)}</span></p>
+        </div>
+        <span class="status ${st.statusType}"><i></i>${escapeHtml(st.status)}</span>
+      </div>
+
+      <div class="metrics">
+        <div class="metric-row">
+          <span>Estimated wait</span>
+          <b class="${st.statusType}">${st.waitTime}</b>
+        </div>
+        <div class="metric-row">
+          <span>${cfg.metricHeading}</span>
+          <b>${metricValue}</b>
+        </div>
+        ${gunsRow}
+        <div class="meter">
+          <span class="meter-fill ${st.statusType}" style="width:${fillPercent}%"></span>
+        </div>
+      </div>
+
+      <div class="card-foot">
+        <span class="brand-tag">${escapeHtml(st.brand)}</span>
+        <a class="nav-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer">
+          Navigate
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </a>
+      </div>
+    </article>`;
+}
+
+function populateDropdown() {
+  const selectedId = $('#stationSelect').value;
+  $('#stationSelect').innerHTML = stations
+    .map(s => `<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.region)}</option>`)
+    .join('');
+  if (stations.some(station => station.id === selectedId)) {
+    $('#stationSelect').value = selectedId;
+  }
+}
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+function handleFilterClick(event) {
+  const btn = event.target.closest('.filter');
+  if (!btn) return;
+
+  const type = btn.dataset.filter;
+  const value = btn.dataset.val;
+
+  btn.parentElement.querySelectorAll('.filter').forEach(b => {
+    b.setAttribute('aria-pressed', String(b === btn));
+  });
+
+  if (type === 'region') activeRegion = value;
+  if (type === 'status') activeStatus = value;
+
+  renderStations();
+}
+
+/* =========================================================
+   GPS
+   ========================================================= */
+function getUserLocation(callback) {
+  const label = $('#gpsLabel');
+  const prev = label.textContent;
+  label.textContent = 'Locating…';
+
+  const finish = (lat, lon, text) => {
+    userLocation = { lat, lon };
+    stations.forEach(s => {
+      s.distance = haversine(lat, lon, s.lat, s.lon);
+    });
+    stations.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+    label.textContent = text;
+    renderStations();
+    updateKpis();
+    askAi('best');
+    if (callback) callback();
+  };
+
+  if (!navigator.geolocation) {
+    showToast('Geolocation is not supported by this browser.');
+    label.textContent = prev;
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => finish(pos.coords.latitude, pos.coords.longitude, 'Nearest first'),
+    () => {
+      finish(12.7937, 80.0253, 'Default: Chennai');
+      showToast('Location unavailable — defaulting to Maraimalai Nagar.');
+    },
+    { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 }
+  );
+}
+
+/* =========================================================
+   VOICE
+   ========================================================= */
+function createRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+
+  const recog = new SR();
+  recog.continuous = false;
+  recog.interimResults = false;
+  recog.lang = 'en-IN';
+
+  recog.onstart = () => {
+    isListening = true;
+    $('#btnVoice').classList.add('listening');
+    $('#voiceLabel').textContent = 'Listening';
+  };
+
+  recog.onresult = event => {
+    const transcript = event.results[0][0].transcript.toLowerCase().trim();
+    const keywords = ['nearby','near by','nearest','closest','station','cng','charging','ev','gun'];
+
+    if (keywords.some(k => transcript.includes(k))) {
+      showToast(`Heard “${transcript}” — sorting nearest hubs.`);
+      getUserLocation(() => {
+        const top = stations[0];
+        if (!top) return;
+        const cfg = MODE_CONFIG[currentMode];
+        $('#aiOutput').innerHTML =
+          `<strong>Voice command executed —</strong> nearest hub is <strong>${escapeHtml(top.name)}</strong> ` +
+          `(~${top.distance} km, ${top.waitTime} wait, ${top.metric} ${cfg.metricUnit}).`;
+      });
+    } else {
+      showToast(`Heard “${transcript}”. Try saying “nearby station”.`);
+    }
+  };
+
+  recog.onerror = () => showToast('Voice recognition error or cancelled.');
+  recog.onend = () => {
+    isListening = false;
+    $('#btnVoice').classList.remove('listening');
+    $('#voiceLabel').textContent = 'Voice';
+  };
+
+  return recog;
+}
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('Voice recognition is not supported here. Try Chrome or Edge.');
+    return;
+  }
+  if (!recognition) recognition = createRecognition();
+  if (!recognition) return;
+  isListening ? recognition.stop() : recognition.start();
+}
+
+/* =========================================================
+   TRIP PLANNER
+   ========================================================= */
+function planTripRoute() {
+  const origin = $('#tripOrigin').value;
+  const destination = $('#tripDestination').value;
+  const range = parseInt($('#tripRange').value, 10);
+  const cfg = MODE_CONFIG[currentMode];
+
+  if (origin === destination) {
+    showToast('Choose different origin and destination hubs.');
+    return;
+  }
+
+  const corridorRegions = new Set([origin, destination, 'Salem & Erode', 'Central TN']);
+
+  const candidates = stations
+    .filter(s => corridorRegions.has(s.region))
+    .filter(s => currentMode === 'cng' ? s.metric >= 200 : s.metric >= 50)
+    .sort((a, b) => a.waitMins - b.waitMins)
+    .slice(0, 3);
+
+  $('#tripSummary').textContent = `${origin} → ${destination} · approx. ${range} km range`;
+  $('#tripStops').textContent = candidates.length
+    ? `${candidates.length} recommended waypoint${candidates.length > 1 ? 's' : ''}`
+    : 'No waypoints required';
+
+  const container = $('#tripStopovers');
+
+  if (!candidates.length) {
+    container.innerHTML = `
+      <div class="stop-card">
+        <div class="stop-eyebrow">Direct route</div>
+        <div class="stop-name">No stopover required for this corridor.</div>
+        <div class="stop-stats"><span>Estimated wait</span><b>—</b></div>
+      </div>`;
+  } else {
+    container.innerHTML = candidates.map((st, idx) => {
+      const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${st.lat},${st.lon}`;
+      return `
+        <div class="stop-card">
+          <div class="stop-eyebrow">Stop ${idx + 1} · ${escapeHtml(st.region)}</div>
+          <div class="stop-name">${escapeHtml(st.name)}</div>
+          <div class="stop-stats">
+            <span>Wait <b>${st.waitTime}</b></span>
+            <span>${cfg.metricHeading.split(' ')[0]} <b>${st.metric} ${cfg.metricUnit}</b></span>
+          </div>
+          <a class="stop-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer">
+            Open in Maps
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+        </div>`;
+    }).join('');
+  }
+
+  const results = $('#tripResults');
+  results.classList.add('show');
+  results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* =========================================================
+   BACKEND SYNC
+   ========================================================= */
+function applyCloudUpdate(stationId, condition, waitMins, metricValue) {
+  const override = { status: condition, waitMins, metric: metricValue };
+  cloudOverrides.set(stationId, override);
+
+  const st = stations.find(s => s.id === stationId);
+  if (st) applyOverride(st, override);
+}
+
+async function fetchLiveStates() {
+  try {
+    const response = await fetch(API_BASE + '/api/stations');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not load stations.');
+    stationCatalog = {
+      cng: data.filter(station => station.mode === 'cng'),
+      ev: data.filter(station => station.mode === 'ev')
+    };
+    cloudOverrides.clear();
+    buildStations();
+    populateDropdown();
+    renderStations();
+    updateKpis();
+    askAi('best');
+  } catch (err) {
+    console.error('Station API request failed:', err);
+    throw err;
+  }
+}
+
+/* =========================================================
+   REPORT FORM
+   ========================================================= */
+async function handleReportSubmit(event) {
+  event.preventDefault();
+
+  const stationId = $('#stationSelect').value;
+  const condition = $('#queueCondition').value;
+  const metricValue = parseInt($('#reportedMetric').value, 10);
+
+  const waitMap = { optimal: 5, moderate: 16, critical: 38 };
+  const waitMins = waitMap[condition] ?? 10;
+
+  // Optimistic local update
+  applyCloudUpdate(stationId, condition, waitMins, metricValue);
+  buildStations();
+  renderStations();
+  updateKpis();
+  askAi('best');
+
+  showToast('Broadcasting update…');
+
+  try {
+    const response = await fetch(API_BASE + '/api/updates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        station_id: stationId,
+        status: condition,
+        metric: metricValue
+      })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not save update.');
+    await fetchLiveStates();
+    showToast('Update saved to the database ✅');
+  } catch (err) {
+    console.error('Station update failed:', err);
+    try {
+      await fetchLiveStates();
+    } catch (refreshError) {
+      console.error('Could not restore station state after failed update:', refreshError);
+    }
+    showToast(err.message || 'Could not save the update. Please try again.');
+  }
+}
+
+/* =========================================================
+   EVENT WIRING
+   ========================================================= */
+function init() {
+  // Mode tabs
+  $('#tabCng').addEventListener('click', () => switchMode('cng'));
+  $('#tabEv').addEventListener('click', () => switchMode('ev'));
+
+  // Header actions
+  $('#btnGps').addEventListener('click', () => getUserLocation());
+  $('#btnVoice').addEventListener('click', toggleVoice);
+
+  // Filters (delegated)
+  $('#regionFilters').addEventListener('click', handleFilterClick);
+  $('#statusFilters').addEventListener('click', handleFilterClick);
+
+  // Search
+  $('#searchInput').addEventListener('input', renderStations);
+
+  // AI chips (delegated)
+  $('#aiChips').addEventListener('click', event => {
+    const chip = event.target.closest('.chip');
+    if (chip) askAi(chip.dataset.action);
+  });
+
+  // Trip planner
+  $('#btnPlan').addEventListener('click', planTripRoute);
+
+  // Report form
+  $('#reportForm').addEventListener('submit', handleReportSubmit);
+
+  // Load persisted station data before selecting the initial mode.
+  fetchLiveStates()
+    .catch(() => showToast('Backend unavailable. Start the server to load live station data.'))
+    .finally(() => {
+      currentMode = '';
+      switchMode('cng');
+      setInterval(() => {
+        fetchLiveStates().catch(err => console.error('Station refresh failed:', err));
+      }, 30000);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
